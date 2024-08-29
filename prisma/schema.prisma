@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  login_id  String    @unique
+  username  String    @unique
+  password  String
+  lastlogin DateTime?
+
+  // 릴레이션 필드
+  /// 플레이어 랭킹 [One to One]
+  player_ranking        PlayerRanking?
+  /// 생성한 게임 [One to Many]
+  games                 Games[]
+  /// 플레이한 게임 - 게임모드의 승자 [Many to Many]
+  games_game_modes_Link GamesGameModesLink[]
+  // 아바타 타입
+  avatar_type           Avatartype           @default(DEFAULT_MAN)
+
+  // 공통 필드
+  /// 행 생성 날짜
+  created_at DateTime  @default(now())
+  /// 행 수정 날짜
+  updated_at DateTime? @updatedAt
+  /// 행 삭제 날짜
+  deleted_at DateTime?
+  /// 행 생성자
+  created_by String?
+  /// 행 수정자
+  updated_by String?
+  /// 행 삭제자
+  deleted_by String?
+
+  @@map("user")
+}
+
+// 플레이어 랭킹 테이블
+model PlayerRanking {
+  id Int @id @default(autoincrement())
+
+  score      Int
+  rank       Int
+  total_game Int   @default(0)
+  total_win  Int   @default(0)
+  win_rate   Float @default(0.0)
+
+  user    User @relation(fields: [user_id], references: [id])
+  user_id Int  @unique
+
+  // 공통 필드
+  /// 행 생성 날짜
+  created_at DateTime  @default(now())
+  /// 행 수정 날짜
+  updated_at DateTime? @updatedAt
+  /// 행 삭제 날짜
+  deleted_at DateTime?
+  /// 행 생성자
+  created_by String?
+  /// 행 수정자
+  updated_by String?
+  /// 행 삭제자
+  deleted_by String?
+
+  @@map("player_ranking")
+}
+
+// 세션에 생성된 게임 테이블
+model Games {
+  id Int @id @default(autoincrement())
+
+  // 게임 방제
+  title              String
+  // 최대 플레이어 인원
+  max_player_count   Int        @default(0)
+  // 게임 시작시 플레이어 인원
+  start_player_count Int        @default(0)
+  // 설정 라운드 ex) 5라운드일시 5라운드 진행후 결승전 진행
+  max_round          Int        @default(1)
+  // 게임 상태
+  status             GameStatus @default(WAITING)
+  // 게임 시작 및 종료 시간
+  started_at         DateTime?
+  ended_at           DateTime?
+
+  // 릴레이션 필드
+  /// 최초 생성한 호스트
+  host                  User                 @relation(fields: [host_id], references: [id])
+  host_id               Int
+  /// 생성된 게임에 진행된 게임모드
+  games_game_modes_Link GamesGameModesLink[]
+
+  // 공통 필드
+  /// 행 생성 날짜
+  created_at DateTime  @default(now())
+  /// 행 수정 날짜
+  updated_at DateTime? @updatedAt
+  /// 행 삭제 날짜
+  deleted_at DateTime?
+  /// 행 생성자
+  created_by String?
+  /// 행 수정자
+  updated_by String?
+  /// 행 삭제자
+  deleted_by String?
+
+  @@map("games")
+}
+
+// 게임모드 관리 테이블
+model GameMode {
+  id Int @id @default(autoincrement())
+
+  /// 게임 모드명
+  name                  String               @unique
+  /// 생성된 게임에 진행된 게임모드
+  games_game_modes_Link GamesGameModesLink[]
+
+  // 공통 필드
+  /// 행 생성 날짜
+  created_at DateTime  @default(now())
+  /// 행 수정 날짜
+  updated_at DateTime? @updatedAt
+  /// 행 삭제 날짜
+  deleted_at DateTime?
+  /// 행 생성자
+  created_by String?
+  /// 행 수정자
+  updated_by String?
+  /// 행 삭제자
+  deleted_by String?
+
+  @@map("gamemode")
+}
+
+// 게임 - 게임모드 다대다 링크 테이블
+model GamesGameModesLink {
+  // 생성된 게임
+  games    Games @relation(fields: [games_id], references: [id])
+  games_id Int
+
+  // 게임모드
+  game_mode    GameMode @relation(fields: [game_mode_id], references: [id])
+  game_mode_id Int
+
+  // 게임 - 게임모드에 할당된 라운드
+  round           Int
+  /// 승리한 유저
+  round_winner    User?   @relation(fields: [round_winner_id], references: [id])
+  round_winner_id Int?
+  /// 결승전 여부
+  is_final_round  Boolean @default(false)
+
+  assigned_at DateTime @default(now())
+
+  @@id([games_id, game_mode_id])
+  @@map("games_gamemode_link")
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum Avatartype {
+  DEFAULT_MAN
+  DEFAULT_WOMAN
+}

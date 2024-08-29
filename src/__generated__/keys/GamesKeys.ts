@@ -1,0 +1,1 @@
+export const GamesKeys = ["id","title","max_player_count","start_player_count","max_round","started_at","ended_at","host_id","created_at","updated_at","deleted_at","created_by","updated_by","deleted_by"];

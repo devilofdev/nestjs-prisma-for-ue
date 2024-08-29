@@ -7,8 +7,6 @@
 .env.development
 .env.production
 
-src/__generated__
-
 prisma/migrations
 
 # Logs

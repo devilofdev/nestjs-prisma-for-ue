@@ -1,0 +1,1 @@
+export const GamesGameModesLinkKeys = ["games_id","game_mode_id","round","round_winner_id","is_final_round","assigned_at"];

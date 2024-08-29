@@ -1,0 +1,1 @@
+export const PlayerRankingKeys = ["id","score","rank","total_game","total_win","win_rate","user_id","created_at","updated_at","deleted_at","created_by","updated_by","deleted_by"];

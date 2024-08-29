@@ -70,7 +70,9 @@ export class UserService {
       const total = await this.prisma.user.count({
         where: {
           deleted_at: null,
-        }
+        },
+        orderBy,
+        ...pagination,
       });
 
       const data = await this.prisma.user.findMany({

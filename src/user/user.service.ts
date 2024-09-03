@@ -36,6 +36,7 @@ export class UserService {
 
   async login(data: Pick<Prisma.UserCreateInput, 'login_id' | 'password'>) {
     try {
+      console.log('data: ', data);
       const user = await this.prisma.user.findUnique({ select: {
         id: true,
         login_id: true,

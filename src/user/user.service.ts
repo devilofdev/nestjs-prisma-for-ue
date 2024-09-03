@@ -7,13 +7,17 @@ import { PaginationPrisma } from 'src/common/pagination';
 import { SortPrisma } from 'src/common/sort';
 import { getPaginationParam } from 'src/utils/pagination';
 import { comparePassword, hashPassword } from 'src/utils/password';
+import { RankingService } from 'src/ranking/ranking.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private rankingService: RankingService) { }
 
-  async createUser(data: Prisma.UserCreateInput) {
+  async signup(data: Prisma.UserCreateInput & { passwordCheck: string }) {
     try {
+      if (data.password !== data.passwordCheck)
+        throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+
       const user = await this.prisma.user.findUnique({
         where: { login_id: data.login_id, deleted_at: null }
       });
@@ -21,14 +25,34 @@ export class UserService {
       if (user)
         throw new NotFoundException('이미 존재하는 아이디입니다.');
 
+      // 비밀번호 암호화
       const hashedPassword = await hashPassword(data.password);
-      
-      return this.prisma.user.create({
+
+      const { passwordCheck, ...rest } = data;
+
+      // 랭킹 조회
+      const rank = await this.rankingService.getSignupRanking();
+
+      // 회원가입 완료
+      const createdUser = await this.prisma.user.create({
         data: {
-          ...data,
-          password: hashedPassword
-        }
-      });
+          ...rest,
+          password: hashedPassword,
+          player_ranking: {
+            create: {
+              rank,
+              score: 0,
+              total_game: 0,
+              total_win: 0,
+              win_rate: 0,
+            },
+          },
+        },
+      })
+
+      return {
+        data: createdUser,
+      }
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -36,17 +60,17 @@ export class UserService {
 
   async login(data: Pick<Prisma.UserCreateInput, 'login_id' | 'password'>) {
     try {
-      console.log('data: ', data);
-      const user = await this.prisma.user.findUnique({ select: {
-        id: true,
-        login_id: true,
-        username: true,
-        password: true,
+      const user = await this.prisma.user.findUnique({
+        select: {
+          id: true,
+          login_id: true,
+          username: true,
+          password: true,
         },
-       where: { 
-        login_id: data.login_id, 
-        deleted_at: null 
-       }
+        where: {
+          login_id: data.login_id,
+          deleted_at: null
+        }
       });
 
       if (!user)
@@ -59,8 +83,10 @@ export class UserService {
 
       const { password, ...rest } = user;
 
-      return rest;
-      
+      return {
+        data: rest,
+      }
+
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

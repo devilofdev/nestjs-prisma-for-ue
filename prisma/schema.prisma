@@ -55,7 +55,7 @@ model PlayerRanking {
   total_win  Int   @default(0)
   win_rate   Float @default(0.0)
 
-  user    User @relation(fields: [user_id], references: [id])
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id Int  @unique
 
   // 공통 필드

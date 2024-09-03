@@ -9,11 +9,11 @@ import { Sort, SortPrisma } from 'src/common/sort';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
-  async create(@Body() data: Prisma.UserCreateInput) {
-    return this.userService.createUser(data);
+  async create(@Body() data: Prisma.UserCreateInput & { passwordCheck: string }) {
+    return this.userService.signup(data);
   }
 
   @Post('/login')

@@ -15,17 +15,15 @@ export class DedicatedServerService {
     constructor(
         private readonly httpService: HttpService,
         private readonly config: ConfigService,
-    ) {}
+    ) { }
 
     async getDedicatedServer() {
         try {
             const MasterServerUrl = this.config.get('MASTER_SERVER_URL');
-            const res = await this.httpService.axiosRef.get(`${MasterServerUrl}/servers`);
-            
+            const res = await this.httpService.axiosRef.get(`http://localhost:7776/servers`);
+            // const res = await this.httpService.axiosRef.get(`${MasterServerUrl}/servers`);
             return {
-                data: {
-                    servers: res.data,
-                },
+                data: res.data,
                 meta: {
                     total: res.data.length
                 }
